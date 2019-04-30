@@ -1,0 +1,232 @@
+\section{Evaluation}\label{sec:eval}
+In order to validate the design and evaluate the performance of \game{}, several tests were performed in a variety of scenarios. As the performance of \game{} is heavily dependent on the NDN topology, all tests were repeated using several topologies where appropriate. As updates to the status of players makes up the significant majority of the traffic seen on the network, the evaluation of \game{} provided here will only consider the traffic generated from the \textit{PlayerStatus} updates. The results gathered based on the other data types (\textit{blocks} and \textit{projectiles}) were extremely similar to those gathered using the \textit{PlayerStatus}. However, in all tests, \textbf{all game mechanics were enabled} but the \textit{block} and \textit{projectile} data is omitted from the evaluation for brevity.  All tests were repeated several times and each test instance produced data that was extremely similar. In the interest of clarity, error bars are omitted from the figures as they offer no additional insight.
+
+
+\subsection{Parameters}
+The backend implementation of \game{} requires several parameters to be defined, many of which can have a substantial impact on performance. Each parameter used in the evaluation is outlined below.
+
+\subsubsection*{Interest Timeout (s)}
+The length of time in seconds that a consumer will wait for an Interest to be satisfied before retransmitting the same Interest.
+
+\subsubsection*{Data Freshness Period (ms)}
+The amount of time a Data packet is considered \textit{fresh} after being received by an NFD instance. This is defined on a hop-by-hop basis.
+
+\subsubsection*{Dead Reckoning (DR) Pub Throttling}
+This mechanism reduces the amount of updates a publisher will produce by maintaining a view of the game object as seen by the consumers.  There are two parameters associated with this mechanism - whether or not it is enabled, and the error threshold which results in an update being produced. The error threshold is a measure of distance, and uses \textit{game world units (GWU)}, where the width of the player's avatar is 1 GWU.
+
+\subsubsection*{Interest Management (IM)}
+This mechanism reduces the rate at which a consumer will express Interests for a given piece of data based on how far away the game object is from the consumer. This mechanism requires four parameters - whether or not it is enabled, the full interest radius ($r_{full}$) in \textit{GWU}, the minimum interest radius ($r_{min}$) in \textit{GWU} and the maximum sleep time $MAX\_SLEEP$ in seconds.
+
+\subsubsection*{Publisher Update Rate \textit{(PUR)} (Hz)}
+This defines the rate at which publishers will check to see if their game object(s) should be updated. This does \textbf{not} directly trigger updates to be sent and instead informs the backend module of whether or not there is an update available. If DR publisher throttling is disabled, the publishers will inform the backend of an update at the defined rate. If it is enabled, the publishers \textit{check} to see if an update is required, at the defined rate. 
+
+\subsubsection*{Publisher Queue Check Rate \textit{(PQR)} (Hz)}
+As outlined in \refsec{sec:des:sync-protocol}, when Interests arrive, they are added to the \textit{outstanding interests} data structure. This parameter defines the rate at which publishers will attempt to satisfy these Interests. At the defined rate, the publisher will examine each of the Interests in this data structure, check to see if an update has been published by the game engine and satisfy the Interest if possible. 
+
+For all tests the following parameter values were unchanged: $Interest\ Timeout = 1000ms$, $Pub\ Update\ Rate = 30Hz$, $Pub\ Queue\ Check\ Rate = 60Hz$. Finally, each of the tests were allowed to run for approximately 5 minutes, as the results obtained did not appear to change once the test reached the steady state.
+
+
+
+\subsection{No Caching, no IM and no DR Publisher Throttling}
+In order to provide a benchmark for future tests, the simplest form of \game{} was tested in which no IM or DR publisher throttling was used and caching was disabled.
+
+\subsubsection*{Round-Trip-Times (RTT)}
+Each of the four topologies performed similarly in this regard. For this reason, the RTTs are only shown for the \textit{dumbbell} topology. As seen in \reffig{fig:eval:basic:rtt}, the RTT for the \textit{PlayerStatus} of each of the nodes appears to be approximately normally distributed around the 20 - 40 ms range, with a moderate positive skew. This follows from the \textit{publisher update rate (PUR)} of 30Hz, meaning updates are published every 33ms as no optimizations were used. Thus, the RTT is heavily dependent on the \textit{PUR}, as expected. The RTT can be reduced by increasing the \textit{PUR}, however this will increase the traffic on the network and thus reduce the scalability of \game{}.  
+
+\begin{figure}[H]
+    \centering
+    \figsize{assets/eval/basic/rtt/dumbbell.png}{0.5}
+    \caption{\textit{RTTs} for \textit{PlayerStatus} in the \textit{dumbbell} topology}
+    \label{fig:eval:basic:rtt}
+\end{figure}
+
+
+\subsubsection*{Position Deltas}
+As caching, IM and DR publisher throttling are disabled, consumers are receiving a constant stream of the most up to date player positions. This suggests that the \textit{position deltas} should be at their lowest in these tests. However, as the optimizations are disabled, these tests will have the largest amount of traffic on the network. Thus, provided the network is not overwhelmed, the \textit{position deltas} should be extremely low in this case. Otherwise, the lack of network optimizations may affect performance sufficiently that the \textit{position deltas} will be large. 
+
+As with the RTTs, each of the topologies performed very similarly in this regard and only the histogram for the \textit{dumbbell} topology is shown.
+
+\begin{figure}[H]
+    \centering
+    \figsize{assets/eval/basic/pos-deltas/dumbbell.png}{0.5}
+    \caption{\textit{Position deltas} for players in the \textit{dumbbell} topology. Note the frequencies over \textit{position deltas} over 1.5 GWUs are extremely low, but are non-zero and were left in the histograms to highlight this fact.}
+    \label{fig:eval:basic:pos-deltas}
+\end{figure}
+
+The \textit{position deltas} seen in \reffig{fig:eval:basic:pos-deltas} show that player positions are synchronized very closely. The figure shows that almost 90\% of the time, when a position update was received for a player, the extrapolated position was within half a \textit{GWU} of the new position. 
+
+
+\subsubsection*{Interest Aggregation Factor (IAF)}
+As previously discussed, one of the main benefits of NDN in a MOG scenario is Interest aggregation. The extent of the Interest aggregation in \game{} is shown in \reffig{fig:eval:basic:interest-agg-dumbbell}. In these figures, the orange bar represents the total number of Interests expressed for data belonging to a particular node, and the blue bar represents the total number of Interest that node received. 
+
+\begin{figure}[H]
+    \centering
+    \figsize{assets/eval/basic/interest-agg/dumbbell.png}{0.5}
+    \caption{Interest aggregation for \textit{PlayerStatus} in the \textit{dumbbell} topology. The \textit{IAF} of nodes A, B, C and D were calculated to be 0.45, 0.46, 0.45 and 0.44 respectively}
+    \label{fig:eval:basic:interest-agg-dumbbell}
+\end{figure}
+
+
+As seen in \reffig{fig:eval:basic:interest-agg-dumbbell}, a substantial amount of Interest aggregation takes place, with all nodes having an \textit{IAF} below 0.5. This means that all of the nodes had to service less than half of the requests that would otherwise be required in IP based solution.
+
+\subsection{Effects of Enabling Caching}
+Theoretically, caching can provide benefits to \game{} in the case where a node falls behind the Interest aggregation period. However, one of the challenges with caching in NDN is that the \textit{freshness period} (cache lifetime) is defined on a hop-by-hop basis. Thus, \textit{freshness periods} must be kept very low. To examine the impact of enabling caching, the tests were repeated, and the Data packets were given a \textit{freshness period} of 20ms.
+
+By enabling caching, the rate of Interests seen by producers in the \textit{tree} topology decreased by 2 Interests per second for all nodes, as seen in \reffig{fig:eval:caching:interest-impact-tree}. The results for the \textit{square} and \textit{dumbbell} were again very similar.
+
+\begin{figure}[H]
+    \centering
+    \figsize{assets/eval/caching/interest-rate-impact/tree.png}{0.5}
+    \caption{Impact of caching on the Interest rates seen by producers in the \textit{tree} topology}
+    \label{fig:eval:caching:interest-impact-tree}
+\end{figure}
+
+\subsection{Effects of Enabling DR Publisher Throttling (DRPT)}
+In order to test DR publisher throttling, the tests were again repeated. The 20ms \textit{freshness period} was used once again meaning caching was enabled. The DR publisher throttling threshold was set to 0.5 GWU, which is half the width of the player's avatar. As with the previous tests, only the \textit{dumbbell} is shown, as the \textit{square} and \textit{tree} topologies performed very similarly.
+
+Recall that at a rate of 30Hz (the publisher update rate), the game will check to see if an update needs to be produced. As publisher throttling was enabled for these tests, an update will only be produced if the player's velocity changed (\textit{velocity}), there was no entry in the recent player status cache (\textit{null}), or the DR threshold is exceeded (\textit{threshold}), as discussed in \refsec{sec:des:dr}. Otherwise, the update is skipped (\textit{skip}). The distribution of the results from the publisher update checks is shown in \reffig{fig:eval:caching:dr-pub-throt:counters:dumbbell} for the \textit{dumbbell} topology.
+
+\begin{figure}[H]
+    \centering
+    \figsize{assets/eval/dr-pub-throt/counters/dumbbell.png}{0.5}
+    \caption{Distribution of results from publisher update checks in the \textit{dumbbell} topology. Note there were no \textit{null} updates required in the test for this topology}
+    \label{fig:eval:caching:dr-pub-throt:counters:dumbbell}
+\end{figure}
+
+As seen in \reffig{fig:eval:caching:dr-pub-throt:counters:dumbbell}, \textbf{almost half} of the updates can be skipped by enabling DR publisher throttling. This has a substantial impact on the network traffic as player position updates make up the majority of the traffic.
+
+However, as with enabling caching, the impact on the game experience must be considered, and DRPT has the potential to hugely impact the game experience in a negative way, as only half of the player updates are now being published. To examine the impact on the game experience, the \textit{position deltas} were re-examined. Again, the results proved to be very similar across all topologies as they all use the same automation script and thus the results for all but the \textit{dumbbell} topology are omitted.
+
+\begin{figure}[H]
+    \centering
+    \figsize{assets/eval/dr-pub-throt/position-deltas/dumbbell.png}{0.5}
+    \caption{\textit{Position deltas} with DR publisher throttling enabled for \textit{dumbbell} topology.}
+    \label{fig:eval:caching:dr-pub-throt:pos-deltas:dumbbell}
+\end{figure}
+
+The \textit{position deltas} shown in \reffig{fig:eval:caching:dr-pub-throt:pos-deltas:dumbbell} are very similar to those shown in \reffig{fig:eval:basic:pos-deltas}, which shows \textit{position deltas} for the benchmark test were all optimizations were disabled. This indicates that there is very little impact on the game experience when DR publisher throttling is enabled with a threshold of 0.5 GWU.
+
+As approximately half of the updates were skipped due to DRPT, the rate of Interests seen by the publishers also dropped accordingly, as seen in \reffig{fig:eval:dr-pub-throt:dumbbell-interest-rates}.
+
+\begin{figure}[H]
+    \centering
+    \figsize{assets/eval/dr-pub-throt/interest-rate-impact/dumbbell.png}{0.5}
+    \caption{Effects of enabling caching with a \textit{freshness period} of 20ms, and DR publisher throttling (\textit{DRPT}) with a tolerance of 0.5 GWU on the Interest rate seen by nodes in the \textit{dumbbell} topology.}
+    \label{fig:eval:dr-pub-throt:dumbbell-interest-rates}
+\end{figure}
+ 
+
+\section{Scalability Testing}\label{sec:eval:scalability}
+In order to test the scalability of \game{}, a new topology was built which contained 16 players and four intermediate routers. The topology is shown in \reffig{fig:eval:scalability-topology}.
+
+\begin{figure}[H]
+    \centering
+    \figsize{assets/eval/scalability/scalability-topology.png}{0.5}
+    \caption{The topology used for testing the scalability of \game{}, consisting of 4 intermediate routers (\textit{Q-T}) arranged in a \textit{square} topology, with 4 player nodes behind each router (\textit{A-P}).}
+    \label{fig:eval:scalability-topology}
+\end{figure}
+
+\subsection{Benchmark with DRPT and IM Disabled}
+As before, the test was conducted with some of the optimizations disabled to provide a benchmark. In this case, \textit{DR publisher throttling (DRPT)} and \textit{Interest management (IM)} were disabled, and caching was enabled with a \textit{freshness period} of 20ms as before. The \textit{RTTs} and \textit{Position Deltas} for each of the 16 players are shown in \reffig{fig:eval:no-im-no-dr:agg-packet-times} and \reffig{fig:eval:no-im-no-dr:agg-pos-deltas} respectively and the effect of Interest aggregation is shown in \reffig{fig:eval:no-im-no-dr:int-agg}.
+
+\begin{figure}[H]
+    \centering
+    \figsize{assets/eval/scalability/no-im-no-dr/aggregated-packet-times.png}{0.5}
+    \caption{\textit{RTTs} for each of the nodes in the scalability test with no IM or DRPT. As before, there is a peak around 33ms which corresponds to the publisher update frequency of 30Hz.}
+    \label{fig:eval:no-im-no-dr:agg-packet-times}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \figsize{assets/eval/scalability/no-im-no-dr/aggregated-position-deltas.png}{0.5}
+    \caption{\textit{Position Deltas} for each of the nodes in the scalability test with no IM or DRPT. As before, the values are very close to zero in most cases indicating the players' positions are very tightly synchronized, even with 16 players.}
+    \label{fig:eval:no-im-no-dr:agg-pos-deltas}
+\end{figure}
+
+As seen in the figures above, \game{} scales up to 16 players very well and the results are very similar to those shown in \reffig{fig:eval:basic:rtt} and \reffig{fig:eval:basic:pos-deltas}, which show the benchmark results for the \textit{dumbbell} topology which only contained four players. 
+
+Finally, the IAF of each node in the scalability is shown in \reffig{fig:eval:no-im-no-dr:int-agg}. The IAFs ranged from 0.07-0.09 in the scalability test, which shows that the Interest aggregation mechanisms scales appropriately with the number of players. 
+
+\begin{figure}[H]
+    \centering
+    \figsize{assets/eval/scalability/no-im-no-dr/interest-aggregations.png}{0.5}
+    \caption{The effect of Interest aggregation in the scalability test with no IM and no DRPT. The \textit{Interest aggregation factor (IAF)} ranged between 0.07 and 0.09 in this case, which is significantly lower than the best \textit{IAF} seen in previous tests were optimizations were enabled. However, \textit{IAFs} are expected to decrease as more players are added, due to the overall larger number of Interests expressed.}
+    \label{fig:eval:no-im-no-dr:int-agg}
+\end{figure}
+
+
+
+% \subsection{Enabling Dead Reckoning Publisher Throttling (DRPT)}
+% With a benchmark established, \textit{DRPT} was then re-enabled with the same values used in previous tests. 
+
+% As \textit{DRPT} effectively slows down the publisher update rate, the expected effect of enabling DRPT is an increasing in RTTs, and this is seen in \reffig{fig:eval:dr:agg-packet-times}. It is worth noting that this is \textbf{not} indicative of poorer network performance, as the increase in RTT is fully explained by the reduction in effective publisher update rates.
+
+% \begin{figure}[H]
+%     \centering
+%     \figsize{assets/eval/scalability/dr/aggregated-packet-times.png}{0.5}
+%     \caption{\textit{RTTs} for each of the nodes in the scalability test with DRPT enabled and IM disabled. The peak increases from the previous value of 33ms due to the effective decrease in the rate of publisher updates, caused by DRPT.}
+%     \label{fig:eval:dr:agg-packet-times}
+% \end{figure}
+
+
+
+% The other expected outcome of enabling DRPT is a reduction in the rate of Interests seen by producers. This is due to the fact that the effective publisher update rate decreases, meaning the effective rate of Interests seen by producers also decreases. 
+
+% As seen in previous tests, enabling \textit{DRPT} with a tolerance of 0.5 GWU allowed producers to skip between 40-50\% of the updates, as seen in \reffig{fig:eval:dr:dr-pub-throt}. This is very similar to the results of tests with fewer players, indicating that the DRPT mechanism also scales appropriately with the number of players.
+
+% \begin{figure}[H]
+%     \centering
+%     \figsize{assets/eval/scalability/dr/dr-pub-throt.png}{0.5}
+%     \caption{The distribution of the results of publisher update checks for each of the players in the \textit{scalability test}. Approximately 40-50\% of the updates could be skipped as a result of \textit{DRPT}.}
+%     \label{fig:eval:dr:dr-pub-throt}
+% \end{figure}
+
+% Finally, the effective reduction in the rate of Interests seen by producers as a result of skipping 40-50\% of the updates can be seen in \reffig{fig:eval:dr:interest-rate-impacts}.
+
+% \begin{figure}[H]
+%     \centering
+%     \figsize{assets/eval/scalability/dr/interest-rate-impacts.png}{0.5}
+%     \caption{The reduction in Interest rates seen by producers in the scalability test as a result of enabling \textit{DRPT}. The figure shows a reduction of approximately 40-50\% which aligns with the skipped updates seen in \reffig{fig:eval:dr:dr-pub-throt}.}
+%     \label{fig:eval:dr:interest-rate-impacts}
+% \end{figure}
+
+
+% \subsection{Enabling Interest Management (IM)}
+% \textit{IM} enables players to intelligently control the rate at which they express Interests for remote object updates, based on the distance the object is from the player. \textit{DRPT} was once again disabled to examine the impact of IM alone. IM was enabled using the following parameters, which were defined in \refsec{sec:des:im}:
+
+% \begin{gather*}
+%     r_{full} = 10\ GWU\\
+%     r_{min} = 20\ GWU\\
+%     MAX\_SLEEP = 2\ seconds
+% \end{gather*}
+
+% There are two expected outcomes of enabling IM. The first is a significant reduction in the rate of Interests seen by publishers, due to the reduced rate of Interests expressed by consumers. The second is a likely increase in \textit{position deltas} due to the longer time between updates, during which remote players may have changed direction. The results of the test agree with these two expected outcomes and can be seen in \reffig{fig:eval:no-im-no-dr:agg-pos-deltas} and \reffig{fig:eval:im:interest-impacts} respectively.
+
+% \begin{figure}[H]
+%     \centering
+%     \figsize{assets/eval/scalability/im/aggregated-position-deltas.png}{0.5}
+%     \caption{The substantial increase in \textit{position deltas} as a result of enabling IM. This is due to consumers reducing the rate at which they express Interests for updates to remote objects which are far away. }
+%     \label{fig:eval:im:pos-deltas}
+% \end{figure}
+
+
+% \begin{figure}[H]
+%     \centering
+%     \figsize{assets/eval/scalability/im/interest-rate-impacts.png}{0.75}
+%     \caption{The reduction in Interest rates seen by producers in the scalability test as a result of enabling \textit{IM}. Note that DRPT was not enabled for this test.}
+%     \label{fig:eval:im:interest-impacts}
+% \end{figure}
+
+\subsection{Enabling DRPT and IM}
+Finally, the test was repeated three more times, once with only IM enabled, once with only DRPT enabled and once with both enabled and the resulting Interest rates for each of the four scenarios are shown in \reffig{fig:eval:im-dr:impacts}.
+\begin{figure}[H]
+    \centering
+    \figsize{assets/eval/scalability/im-dr/interest-rate-impacts.png}{0.5}
+    \caption{The impacts of enabling IM, DR and both IM and DR on the Interest rates seen by producers in the scalability tests.}
+    \label{fig:eval:im-dr:impacts}
+\end{figure}
+
+Although IM will diminish the effectiveness of DRPT to a certain degree, the two optimizations are entirely compatible. The combined use of DRPT and IM should be the most beneficial in terms of reducing Interest rates and the results shown in \reffig{fig:eval:im-dr:impacts} agree with this theory. 
+
+There are a small number of exceptions in which one of the optimizations out performs the combination. An example of this is the difference in Interest rates seen by node C in \reffig{fig:eval:im-dr:impacts} as a result of enabling and disabling the optimizations. IM alone caused a greater reduction in Interest rate for node C than the combination of IM and DRPT. These discrepancies are most likely a result of small differences in how the game played out. For example, if node C ended up becoming very isolated from other players, IM would cause it to see a much-reduced Interest rate. 
+

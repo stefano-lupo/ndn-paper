@@ -1,8 +1,8 @@
 \documentclass[journal]{IEEEtran}
 
-\author{Stefano Lupo, ~\IEEEmembership{MAI, Trinity College Dublin}% <-this % stops a space
-\thanks{Stefano Lupo is currently pursuing a MAI degree in Computer Engineering at Trinity College Dublin (email - lupos@tcd.ie). }% <-this % stops a space
-}
+\author{Stefano Lupo, lupos@tcd.ie,~\IEEEmembership{MAI, Trinity College Dublin}}% <-this % stops a space
+% \thanks{Stefano Lupo is currently pursuing a MAI degree in Computer Engineering at Trinity College Dublin (email - lupos@tcd.ie). }% <-this % stops a space
+% }
 
 \title{Multiplayer Online Game Communication Using Named Data Networking}
 % The paper headers
@@ -14,14 +14,38 @@
 
 
 \usepackage[round,sort,comma,numbers]{natbib}
+\usepackage{url}
 \setcitestyle{square}
 % \usepackage{gensymb}
 % \usepackage{graphicx}biblist
-% \usepackage{amssymb}biblist
+\usepackage{amssymb}
 % \usepackage[T1]{fontenc}biblist
 \usepackage{amsmath}
 \usepackage[english]{babel}
 \usepackage{eurosym}
+\usepackage[pdftex]{graphicx}
+\graphicspath{{./assets/}}
+\usepackage{scrextend}  % List with description all descriptions tabbed as wide as longest
+\addtokomafont{labelinglabel}{\itshape} % Who knows what this does
+\usepackage{float} % Figure placement
+\usepackage{multirow}
+
+\newcommand{\game}{NDNShooter}
+\newcommand{\gameprefix}{/<game\_prefix>}
+\newcommand{\sneaktitle}[1]{\hfill\break\textbf{#1}\hfill\break\break}
+\newcommand{\refcode}[1]{code listing \ref{#1}}
+\newcommand{\refsec}[1]{section \ref{#1}}
+\newcommand{\refeq}[1]{equation \ref{#1}}
+\newcommand{\reftbl}[1]{table \ref{#1}}
+\newcommand{\reffig}[1]{figure \ref{#1}}
+\newcommand{\refapp}[1]{appendix \ref{#1}}
+
+% \definecolor{light-gray}{gray}{0.95}
+% \lstset{language=java, basicstyle={\normalsize\ttfamily\bfseries},}
+% \newcommand{\java}[1]{\colorbox{light-gray}{\lstinline{#1}}}
+\newcommand{\sub}[1]{_\text{#1}}
+
+\newcommand{\figsize}[2]{\includegraphics[width=#2\textwidth]{#1}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
@@ -30,6 +54,11 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
+NDN is a new Internet architecture in which the core abstraction changes from sending data between two specific hosts in a network, to naming self-contained pieces of data, and allowing that data to be fetched by the name alone. NDN aims to replace IP as the \textit{universal network layer} of tomorrow's Internet, and supports running over a variety of lower level protocols such as Ethernet, Bluetooth and even IP itself. With the ever-increasing popularity of MOGs, this research aimed to investigate the possibility of using NDN as the core communication protocol for a multiplayer game.
+
+As the data generated in MOGs is so varied, one of the main goals of this research was to determine how well NDN can support all of these different data types, some of which fit nicely into a content-oriented abstraction, and some of which are entirely host oriented. The other major challenge associated with MOGs is that they require extremely high-performance networking solutions that provide high bandwidth and low latency.
+
+The research led to the development of a novel protocol for synchronizing remote game objects across all players in the game using NDN. This protocol was designed to exploit the three main benefits of NDN - \textit{interest aggregation}, \textit{native multicast} and \textit{in-network caching}. A peer-to-peer 2D game was implemented and used to test the performance of the synchronization protocol. The results show that NDN is an excellent choice for MOG communications and that the developed synchronization protocol could easily support 16 concurrent players, while providing the performance required for a fast paced MOG. 
 \end{abstract}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -39,40 +68,27 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
-test\cite{ndn}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Today, most devices make use of the so called Internet Protocol (IP) as the primary mechanism for global communication. The design of IP was heavily influenced by the success of the 20th century telephone networks, resulting in a protocol tailored towards point-to-point communication between two hosts. IP is the \textit{universal network layer} of today's Internet, which implements the minimum functionality required for global interconnectivity. This represents the so called \textit{thin waist} of the Internet, upon which many of the vital systems in use today are built \cite{ndn-exec-summary}. The design of IP was paramount in the success of the modern day Internet. However, in recent years, the Internet has become used in a variety of new non point-to-point contexts, rendering the inherent host based abstraction of IP less than ideal.  
+
+The Named Data Networking (NDN) project is a continuation of an earlier project known as Content-Centric Networking (CCN) \cite{vj-named-content}, both of which are instances of a broader networking architecture known as Information Centric Networking (ICN). The CCN and NDN projects represent a shift in how networks are designed, from the host-centric approach of IP to a data centric approach. NDN provides a new global communication mechanism, maintaining many of the key features which made IP so successful, while improving on the shortcomings uncovered after three decades of use. The design of NDN aligns with the \textit{thin waist} ideology of today's Internet and NDN strives to be the universal network layer of tomorrow's Internet. 
+
+Multiplayer online games (MOGs) have become more and more popular over the past several decades and are now a widely enjoyed pastime amongst people of all ages. The complexity of MOGs has also risen dramatically in that time, with modern MOGs providing huge immersive game worlds which can support thousands of concurrent players. As games are realtime in nature, modern MOGs require extremely high performance networking solutions to support large numbers of players.
+
+
+This research aims to bring these two fields together by examining the use of NDN as the primary communication mechanism for MOGs. Although substantial research was carried out in order to gain a deep understanding of each of the fields, the main focus of the project was to design and implement a real NDN based MOG and to build a comprehensive framework for testing the game in a variety of scenarios.    
+
+Finally, all of the source code developed for this project is available on GitHub at the following URL: \textit{github.com/stefano-lupo/ndn-thesis}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Background \& Related Work}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{sota.tex}
+\input{design.tex}
+\input{testing-impl.tex}
+\input{evaluation.tex}
+\input{conclusion.tex}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Methodology \& Results}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discussion}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
-
-
-
-
-
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Conclusion}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Acknowledgement}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\vfill{}
 \bibliographystyle{unsrt}
 \bibliography{bibliography.bib}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
