@@ -125,7 +125,17 @@ As previously discussed, the requirement of a second round trip renders existing
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % % Custom Sync Protocol
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{figure*}
+    \centering
+    \centering
+    \figsize{assets/design/sync-protocol-name.png}{1}
+    \caption{Name schema of \game{}'s game object sync protocol}
+    \label{fig:des:sync-protocol-name}
+    \vspace*{\floatsep}
+\end{figure*}%
 \section{\game{} Sync Protocol}\label{sec:des:sync-protocol}
+
 One of the most challenging aspects of building MOGs is the requirement for a high-performance networking solution which is capable of supporting a large number of relatively small packets in a low latency manner. As such, a custom protocol was developed to enable scalable and low latency synchronization of game objects over NDN.
 
 % \subsection{Motivation}
@@ -142,14 +152,6 @@ There are two key characteristics of MOG data which can be exploited to provide 
 \subsection{Name Schema}\label{sec:des:naming}
 One of the most important aspects of designing an application or protocol which uses NDN is the \textit{name schema}. NDN applications should use a naming convention such that consumers can deterministically construct names for data they are interested in. The name schema used for \game{}'s game object sync protocol is shown in \reffig{fig:des:sync-protocol-name}.
 
-\begin{figure*}
-    \centering
-    \centering
-    \figsize{assets/design/sync-protocol-name.png}{1}
-    \caption{Name schema of \game{}'s game object sync protocol}
-    \label{fig:des:sync-protocol-name}
-    \vspace*{\floatsep}
-\end{figure*}%
 
 As seen in \reffig{fig:des:sync-protocol-name}, the number of components used in the name depends on the use case. For example, when producers register the prefix with the NFD, they only use the first 5 components (up to the \textit{sync} component), so that they receive the Interests regardless of the version floor (\textit{vf}) or next version floor (\textit{nextVf}). When consumers express Interests for a piece of data, they only use the first 6 components (up to the \textit{vf} component). Finally, when producers respond with Data packets, they use all 7 of the components for naming the Data packet.
 
@@ -290,7 +292,7 @@ As discussed previously, \textit{interest management (IM)} is a key component in
 
 The IM system in \game{} is based only on the distance game objects are away from the local player. A graphical representation of the IM system is shown in \reffig{fig:des:interest-regions}.
 
-\begin{figure}[H]
+\begin{figure}
     \centering
     \figsize{assets/design/interest-region-single-player.png}{0.5}
     \caption{Parameters associated with \game{}'s IM system}
